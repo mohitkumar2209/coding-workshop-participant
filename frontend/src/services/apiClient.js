@@ -26,10 +26,20 @@ apiClient.interceptors.request.use(
 // Response interceptor to handle errors
 apiClient.interceptors.response.use(
     (response) => {
+        // Axios sometimes leaves data as a string if Content-Type is missing
+        let data = response.data;
+        if (typeof data === 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch (e) {
+                // Ignore parse errors, leave as string
+            }
+        }
+
         // Handle raw Lambda proxy payload from LocalStack
-        if (response.data && typeof response.data === 'object' && 'statusCode' in response.data && 'body' in response.data) {
-            const statusCode = response.data.statusCode;
-            let body = response.data.body;
+        if (data && typeof data === 'object' && 'statusCode' in data && 'body' in data) {
+            const statusCode = data.statusCode;
+            let body = data.body;
             try {
                 if (typeof body === 'string') body = JSON.parse(body);
             } catch (e) {
@@ -50,9 +60,12 @@ apiClient.interceptors.response.use(
             
             response.status = statusCode;
             response.data = body;
+        } else {
+            response.data = data; // Assign the parsed JSON if it wasn't wrapped
         }
         return response;
     },
+
     (error) => {
         if (error.response?.status === 401) {
             // Token expired or invalid
