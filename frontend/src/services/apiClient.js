@@ -1,8 +1,14 @@
 import axios from 'axios';
 
+let baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// The proxy server expects paths to start with /api
+if (baseURL === 'http://localhost:3001') {
+    baseURL = 'http://localhost:3001/api';
+}
+
 // Create axios instance with base configuration
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+    baseURL,
     timeout: 30000,
     headers: {
         'Content-Type': 'application/json',
