@@ -83,6 +83,7 @@ def init_db():
                 key VARCHAR(255) NOT NULL,
                 value TEXT NOT NULL
             );
+        """)
         # Create performance_reviews table
         cur.execute("""
             CREATE TABLE IF NOT EXISTS performance_reviews (
