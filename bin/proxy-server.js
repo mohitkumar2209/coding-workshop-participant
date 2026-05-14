@@ -63,8 +63,24 @@ const server = http.createServer((req, res) => {
   }
 
   const endpointName = pathParts[1];
-  const remainingPath = pathParts.length > 2 ? '/' + pathParts.slice(2).join('/') : '';
-  const targetUrl = endpoints[endpointName] + remainingPath + (parsedUrl.search || '');
+  let remainingPath = pathParts.length > 2 ? '/' + pathParts.slice(2).join('/') : '';
+  
+  let baseTarget = endpoints[endpointName];
+  if (!baseTarget) {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: `Unknown endpoint: ${endpointName}`,
+      available: Object.keys(endpoints)
+    }));
+    return;
+  }
+
+  // Prevent double slashes
+  if (baseTarget.endsWith('/') && remainingPath.startsWith('/')) {
+    baseTarget = baseTarget.slice(0, -1);
+  }
+  
+  const targetUrl = baseTarget + remainingPath + (parsedUrl.search || '');
 
   if (!targetUrl) {
     res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -91,8 +107,14 @@ const server = http.createServer((req, res) => {
   delete headers['sec-fetch-mode'];
   delete headers['sec-fetch-dest'];
 
+  let hostname = target.hostname;
+  // Bypass DNS rebinding protections in corporate environments for LocalStack
+  if (hostname && hostname.includes('localhost.localstack.cloud')) {
+    hostname = '127.0.0.1';
+  }
+
   const options = {
-    hostname: target.hostname,
+    hostname: hostname,
     port: target.port,
     path: target.path,
     method: req.method,
