@@ -83,5 +83,46 @@ def init_db():
                 key VARCHAR(255) NOT NULL,
                 value TEXT NOT NULL
             );
+        # Create performance_reviews table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS performance_reviews (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES individuals(id) ON DELETE CASCADE,
+                rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                feedback TEXT NOT NULL,
+                review_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        # Create competencies table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS competencies (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES individuals(id) ON DELETE CASCADE,
+                skill_name VARCHAR(255) NOT NULL,
+                skill_level INTEGER NOT NULL CHECK (skill_level >= 1 AND skill_level <= 5),
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        # Create development_plans table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS development_plans (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES individuals(id) ON DELETE CASCADE,
+                goal TEXT NOT NULL,
+                status VARCHAR(50) NOT NULL,
+                target_date DATE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        # Create training_records table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS training_records (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES individuals(id) ON DELETE CASCADE,
+                training_name VARCHAR(255) NOT NULL,
+                status VARCHAR(50) NOT NULL,
+                completion_date DATE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         """)
         conn.commit()

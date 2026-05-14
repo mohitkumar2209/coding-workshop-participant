@@ -15,42 +15,62 @@ const usersService = {
 
     // Get performance reviews
     getPerformanceReviews: async (userId = null) => {
-        return [];
+        const url = userId
+            ? `/team-service/performance_reviews?user_id=${userId}`
+            : '/team-service/performance_reviews';
+        const response = await apiClient.get(url);
+        return response.data;
     },
 
     // Create performance review
     createPerformanceReview: async (reviewData) => {
-        return { id: Date.now(), ...reviewData };
+        const response = await apiClient.post('/team-service/performance_reviews', reviewData);
+        return response.data;
     },
 
     // Get development plans
     getDevelopmentPlans: async (userId = null) => {
-        return [];
+        const url = userId
+            ? `/team-service/development_plans?user_id=${userId}`
+            : '/team-service/development_plans';
+        const response = await apiClient.get(url);
+        return response.data;
     },
 
     // Create development plan
     createDevelopmentPlan: async (planData) => {
-        return { id: Date.now(), ...planData };
+        const response = await apiClient.post('/team-service/development_plans', planData);
+        return response.data;
     },
 
     // Get competencies
     getCompetencies: async (userId = null) => {
-        return [];
+        const url = userId
+            ? `/team-service/competencies?user_id=${userId}`
+            : '/team-service/competencies';
+        const response = await apiClient.get(url);
+        return response.data;
     },
 
     // Create competency
     createCompetency: async (competencyData) => {
-        return { id: Date.now(), ...competencyData };
+        const response = await apiClient.post('/team-service/competencies', competencyData);
+        return response.data;
     },
 
     // Get training records
     getTrainingRecords: async (userId = null) => {
-        return [];
+        const url = userId
+            ? `/team-service/training_records?user_id=${userId}`
+            : '/team-service/training_records';
+        const response = await apiClient.get(url);
+        return response.data;
     },
 
     // Create training record
     createTrainingRecord: async (trainingData) => {
-        return { id: Date.now(), ...trainingData };
+        const response = await apiClient.post('/team-service/training_records', trainingData);
+        return response.data;
     },
 };
 

@@ -270,3 +270,202 @@ def handle_achievements(event, user):
             return json_response(204, {})
             
     return json_response(405, {"error": "Method not allowed"})
+
+def handle_performance_reviews(event, user):
+    conn = get_connection()
+    method = event['httpMethod']
+    query_params = event.get('queryStringParameters') or {}
+    user_id = query_params.get('user_id')
+    
+    if method == 'GET':
+        with conn.cursor() as cur:
+            if user_id:
+                cur.execute("SELECT * FROM performance_reviews WHERE user_id = %s ORDER BY review_date DESC", (user_id,))
+            else:
+                cur.execute("SELECT * FROM performance_reviews ORDER BY review_date DESC")
+            return json_response(200, cur.fetchall())
+            
+    elif method == 'POST':
+        if user['role'] not in ['ADMIN', 'MANAGER']:
+            return json_response(403, {"error": "Forbidden"})
+        body = json.loads(event.get('body', '{}'))
+        required = ['user_id', 'rating', 'feedback']
+        if not all(k in body for k in required):
+            return json_response(400, {"error": "Missing required fields"})
+            
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO performance_reviews (user_id, rating, feedback) VALUES (%s, %s, %s) RETURNING *",
+                (body['user_id'], body['rating'], body['feedback'])
+            )
+            review = cur.fetchone()
+            conn.commit()
+            return json_response(201, review)
+            
+    return json_response(405, {"error": "Method not allowed"})
+
+def handle_competencies(event, user):
+    conn = get_connection()
+    method = event['httpMethod']
+    query_params = event.get('queryStringParameters') or {}
+    user_id = query_params.get('user_id')
+    
+    if method == 'GET':
+        with conn.cursor() as cur:
+            if user_id:
+                cur.execute("SELECT * FROM competencies WHERE user_id = %s ORDER BY skill_name", (user_id,))
+            else:
+                cur.execute("SELECT * FROM competencies ORDER BY skill_name")
+            return json_response(200, cur.fetchall())
+            
+    elif method == 'POST':
+        if user['role'] not in ['ADMIN', 'MANAGER']:
+            return json_response(403, {"error": "Forbidden"})
+        body = json.loads(event.get('body', '{}'))
+        required = ['user_id', 'skill_name', 'skill_level']
+        if not all(k in body for k in required):
+            return json_response(400, {"error": "Missing required fields"})
+            
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO competencies (user_id, skill_name, skill_level) VALUES (%s, %s, %s) RETURNING *",
+                (body['user_id'], body['skill_name'], body['skill_level'])
+            )
+            comp = cur.fetchone()
+            conn.commit()
+            return json_response(201, comp)
+            
+    return json_response(405, {"error": "Method not allowed"})
+
+def handle_development_plans(event, user):
+    conn = get_connection()
+    method = event['httpMethod']
+    query_params = event.get('queryStringParameters') or {}
+    user_id = query_params.get('user_id')
+    
+    if method == 'GET':
+        with conn.cursor() as cur:
+            if user_id:
+                cur.execute("SELECT * FROM development_plans WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+            else:
+                cur.execute("SELECT * FROM development_plans ORDER BY created_at DESC")
+            return json_response(200, cur.fetchall())
+            
+    elif method == 'POST':
+        if user['role'] not in ['ADMIN', 'MANAGER']:
+            return json_response(403, {"error": "Forbidden"})
+        body = json.loads(event.get('body', '{}'))
+        required = ['user_id', 'goal', 'status']
+        if not all(k in body for k in required):
+            return json_response(400, {"error": "Missing required fields"})
+            
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO development_plans (user_id, goal, status, target_date) VALUES (%s, %s, %s, %s) RETURNING *",
+                (body['user_id'], body['goal'], body['status'], body.get('target_date'))
+            )
+            plan = cur.fetchone()
+            conn.commit()
+            return json_response(201, plan)
+            
+    return json_response(405, {"error": "Method not allowed"})
+
+def handle_training_records(event, user):
+    conn = get_connection()
+    method = event['httpMethod']
+    query_params = event.get('queryStringParameters') or {}
+    user_id = query_params.get('user_id')
+    
+    if method == 'GET':
+        with conn.cursor() as cur:
+            if user_id:
+                cur.execute("SELECT * FROM training_records WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+            else:
+                cur.execute("SELECT * FROM training_records ORDER BY created_at DESC")
+            return json_response(200, cur.fetchall())
+            
+    elif method == 'POST':
+        if user['role'] not in ['ADMIN', 'MANAGER']:
+            return json_response(403, {"error": "Forbidden"})
+        body = json.loads(event.get('body', '{}'))
+        required = ['user_id', 'training_name', 'status']
+        if not all(k in body for k in required):
+            return json_response(400, {"error": "Missing required fields"})
+            
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO training_records (user_id, training_name, status, completion_date) VALUES (%s, %s, %s, %s) RETURNING *",
+                (body['user_id'], body['training_name'], body['status'], body.get('completion_date'))
+            )
+            record = cur.fetchone()
+            conn.commit()
+            return json_response(201, record)
+            
+    return json_response(405, {"error": "Method not allowed"})
+
+def handle_analytics(event, user):
+    conn = get_connection()
+    method = event['httpMethod']
+    
+    if method == 'GET':
+        with conn.cursor() as cur:
+            # High Potential Employees: avg rating >= 4
+            cur.execute("""
+                SELECT i.id, i.name, i.role, t.name as team_name, AVG(pr.rating) as avg_rating
+                FROM individuals i
+                LEFT JOIN teams t ON i.team_id = t.id
+                JOIN performance_reviews pr ON i.id = pr.user_id
+                GROUP BY i.id, i.name, i.role, t.name
+                HAVING AVG(pr.rating) >= 4.0
+                ORDER BY avg_rating DESC
+            """)
+            high_potential = cur.fetchall()
+            
+            # Skill Distribution: count of users by skill level
+            cur.execute("""
+                SELECT skill_level, COUNT(DISTINCT user_id) as count
+                FROM competencies
+                GROUP BY skill_level
+                ORDER BY skill_level DESC
+            """)
+            skill_dist = cur.fetchall()
+            
+            # Critical Skill Gaps: competencies with avg rating < 3
+            cur.execute("""
+                SELECT skill_name, AVG(skill_level) as avg_level, COUNT(user_id) as user_count
+                FROM competencies
+                GROUP BY skill_name
+                HAVING AVG(skill_level) < 3.0
+                ORDER BY avg_level ASC
+            """)
+            skill_gaps = cur.fetchall()
+            
+            # Attrition Risk: low performance trend (avg rating <= 2)
+            cur.execute("""
+                SELECT i.id, i.name, i.role, t.name as team_name, AVG(pr.rating) as avg_rating
+                FROM individuals i
+                LEFT JOIN teams t ON i.team_id = t.id
+                JOIN performance_reviews pr ON i.id = pr.user_id
+                GROUP BY i.id, i.name, i.role, t.name
+                HAVING AVG(pr.rating) <= 2.5
+                ORDER BY avg_rating ASC
+            """)
+            attrition_risk = cur.fetchall()
+            
+            # Training completion stats
+            cur.execute("""
+                SELECT status, COUNT(*) as count
+                FROM training_records
+                GROUP BY status
+            """)
+            training_stats = cur.fetchall()
+            
+            return json_response(200, {
+                "high_potential_employees": high_potential,
+                "skill_distribution": skill_dist,
+                "critical_skill_gaps": skill_gaps,
+                "attrition_risk": attrition_risk,
+                "training_stats": training_stats
+            })
+            
+    return json_response(405, {"error": "Method not allowed"})

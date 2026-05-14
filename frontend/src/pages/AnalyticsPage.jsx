@@ -10,10 +10,14 @@ import {
     Groups as GroupsIcon,
     EmojiEvents as AchievementsIcon,
     Warning as WarningIcon,
+    Psychology as SkillIcon,
+    School as SchoolIcon,
+    Star as StarIcon
 } from '@mui/icons-material';
 import teamsService from '../services/teamsService';
 import achievementsService from '../services/achievementsService';
 import usersService from '../services/usersService';
+import apiClient from '../services/apiClient';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -21,6 +25,7 @@ const AnalyticsPage = () => {
     const [teams, setTeams] = useState([]);
     const [achievements, setAchievements] = useState([]);
     const [users, setUsers] = useState([]);
+    const [hrAnalytics, setHrAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -32,14 +37,16 @@ const AnalyticsPage = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [teamsData, achievementsData, usersData] = await Promise.all([
+            const [teamsData, achievementsData, usersData, hrData] = await Promise.all([
                 teamsService.getAll(),
                 achievementsService.getAll(),
                 usersService.getAll(),
+                apiClient.get('/team-service/analytics').then(res => res.data),
             ]);
             setTeams(teamsData);
             setAchievements(achievementsData);
             setUsers(usersData);
+            setHrAnalytics(hrData);
         } catch (err) {
             setError('Failed to load analytics data.');
         } finally {
@@ -309,6 +316,189 @@ const AnalyticsPage = () => {
                                         </TableBody>
                                     </Table>
                                 </TableContainer>
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* --- NEW HR ANALYTICS MODULES --- */}
+
+                {/* High Potential Employees */}
+                <Grid item xs={12} md={6}>
+                    <Card sx={{ height: '100%' }}>
+                        <CardContent>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                <TrendingUpIcon color="primary" />
+                                <Typography variant="h6" fontWeight={600}>
+                                    High Potential Employees
+                                </Typography>
+                            </Box>
+                            <Typography variant="body2" color="text.secondary" mb={2}>
+                                Employees with an average performance rating of 4.0 or higher.
+                            </Typography>
+                            <Divider sx={{ mb: 2 }} />
+                            {hrAnalytics?.high_potential_employees?.length === 0 ? (
+                                <Typography color="text.secondary">No high potential employees identified.</Typography>
+                            ) : (
+                                <TableContainer component={Paper} variant="outlined">
+                                    <Table size="small">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>Name</TableCell>
+                                                <TableCell>Team</TableCell>
+                                                <TableCell align="right">Avg Rating</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {hrAnalytics?.high_potential_employees?.map((emp) => (
+                                                <TableRow key={emp.id}>
+                                                    <TableCell>{emp.name}</TableCell>
+                                                    <TableCell>{emp.team_name || '—'}</TableCell>
+                                                    <TableCell align="right">
+                                                        <Chip 
+                                                            icon={<StarIcon sx={{ fontSize: 16 }} />} 
+                                                            label={parseFloat(emp.avg_rating).toFixed(1)} 
+                                                            size="small" 
+                                                            color="success" 
+                                                            variant="outlined" 
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* Attrition Risk */}
+                <Grid item xs={12} md={6}>
+                    <Card sx={{ height: '100%' }}>
+                        <CardContent>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                <WarningIcon color="error" />
+                                <Typography variant="h6" fontWeight={600}>
+                                    Attrition Risk Alerts
+                                </Typography>
+                            </Box>
+                            <Typography variant="body2" color="text.secondary" mb={2}>
+                                Employees with an average rating of 2.5 or below.
+                            </Typography>
+                            <Divider sx={{ mb: 2 }} />
+                            {hrAnalytics?.attrition_risk?.length === 0 ? (
+                                <Alert severity="success" icon={false}>No employees currently at risk based on performance.</Alert>
+                            ) : (
+                                <TableContainer component={Paper} variant="outlined">
+                                    <Table size="small">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>Name</TableCell>
+                                                <TableCell>Team</TableCell>
+                                                <TableCell align="right">Avg Rating</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {hrAnalytics?.attrition_risk?.map((emp) => (
+                                                <TableRow key={emp.id}>
+                                                    <TableCell>{emp.name}</TableCell>
+                                                    <TableCell>{emp.team_name || '—'}</TableCell>
+                                                    <TableCell align="right">
+                                                        <Chip 
+                                                            label={parseFloat(emp.avg_rating).toFixed(1)} 
+                                                            size="small" 
+                                                            color="error" 
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* Critical Skill Gaps */}
+                <Grid item xs={12} md={6}>
+                    <Card sx={{ height: '100%' }}>
+                        <CardContent>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                <SkillIcon color="warning" />
+                                <Typography variant="h6" fontWeight={600}>
+                                    Critical Skill Gaps
+                                </Typography>
+                            </Box>
+                            <Typography variant="body2" color="text.secondary" mb={2}>
+                                Competencies where the average proficiency level is below 3.0.
+                            </Typography>
+                            <Divider sx={{ mb: 2 }} />
+                            {hrAnalytics?.critical_skill_gaps?.length === 0 ? (
+                                <Typography color="text.secondary">No critical skill gaps identified.</Typography>
+                            ) : (
+                                <TableContainer component={Paper} variant="outlined">
+                                    <Table size="small">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>Skill</TableCell>
+                                                <TableCell align="center">Assessments</TableCell>
+                                                <TableCell align="right">Avg Level</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {hrAnalytics?.critical_skill_gaps?.map((gap, idx) => (
+                                                <TableRow key={idx}>
+                                                    <TableCell fontWeight={500}>{gap.skill_name}</TableCell>
+                                                    <TableCell align="center">{gap.user_count}</TableCell>
+                                                    <TableCell align="right">
+                                                        <Chip 
+                                                            label={`${parseFloat(gap.avg_level).toFixed(1)} / 5`} 
+                                                            size="small" 
+                                                            color="warning" 
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* Training Stats */}
+                <Grid item xs={12} md={6}>
+                    <Card sx={{ height: '100%' }}>
+                        <CardContent>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                <SchoolIcon color="info" />
+                                <Typography variant="h6" fontWeight={600}>
+                                    Training Pipeline
+                                </Typography>
+                            </Box>
+                            <Typography variant="body2" color="text.secondary" mb={2}>
+                                Organization-wide training activity statuses.
+                            </Typography>
+                            <Divider sx={{ mb: 2 }} />
+                            {hrAnalytics?.training_stats?.length === 0 ? (
+                                <Typography color="text.secondary">No training activities recorded yet.</Typography>
+                            ) : (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    {hrAnalytics?.training_stats?.map((stat, idx) => (
+                                        <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {stat.status.replace('_', ' ')}
+                                            </Typography>
+                                            <Chip 
+                                                label={`${stat.count} Activities`} 
+                                                color={stat.status === 'COMPLETED' ? 'success' : stat.status === 'IN_PROGRESS' ? 'primary' : 'default'} 
+                                            />
+                                        </Box>
+                                    ))}
+                                </Box>
                             )}
                         </CardContent>
                     </Card>

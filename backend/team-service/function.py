@@ -2,7 +2,11 @@ import json
 import logging
 from db import init_db
 from auth import login_user, register_user, require_auth
-from api import handle_teams, handle_individuals, handle_achievements, handle_metadata, json_response
+from api import (
+    handle_teams, handle_individuals, handle_achievements, handle_metadata, 
+    handle_performance_reviews, handle_competencies, handle_development_plans, 
+    handle_training_records, handle_analytics, json_response
+)
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -63,6 +67,16 @@ def handler(event, context=None):
             return handle_achievements(event, user)
         elif '/metadata' in path:
             return handle_metadata(event, user)
+        elif '/performance_reviews' in path:
+            return handle_performance_reviews(event, user)
+        elif '/competencies' in path:
+            return handle_competencies(event, user)
+        elif '/development_plans' in path:
+            return handle_development_plans(event, user)
+        elif '/training_records' in path:
+            return handle_training_records(event, user)
+        elif '/analytics' in path:
+            return handle_analytics(event, user)
             
         return json_response(404, {"error": "Not Found", "path": path})
         
