@@ -21,6 +21,13 @@ def handler(event, context=None):
     if not db_initialized:
         return json_response(500, {"error": "Database initialization failed"})
         
+    try:
+        from db import get_connection
+        conn = get_connection()
+        conn.rollback()
+    except Exception:
+        pass
+        
     path = event.get('path', event.get('rawPath', ''))
     method = event.get('httpMethod', event.get('requestContext', {}).get('http', {}).get('method', 'GET'))
     
@@ -39,7 +46,7 @@ def handler(event, context=None):
             
         if path.endswith('/auth/register') and method == 'POST':
             body = json.loads(event.get('body', '{}'))
-            res_body, status = register_user(body.get('email'), body.get('password'), body.get('role', 'Viewer'))
+            res_body, status = register_user(body.get('email'), body.get('password'), body.get('role', 'Viewer'), body.get('name'))
             return json_response(status, res_body)
             
         # Require authentication for all other routes
@@ -63,6 +70,12 @@ def handler(event, context=None):
         return json_response(400, {"error": "Invalid JSON in request body"})
     except Exception as e:
         logger.error(f"Error handling request: {e}", exc_info=True)
+        try:
+            from db import get_connection
+            conn = get_connection()
+            conn.rollback()
+        except Exception:
+            pass
         return json_response(500, {"error": str(e)})
 
 if __name__ == "__main__":

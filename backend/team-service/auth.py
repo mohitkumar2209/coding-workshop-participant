@@ -37,7 +37,7 @@ def decode_token(token):
     except jwt.InvalidTokenError:
         return None
 
-def register_user(email, password, role='Viewer'):
+def register_user(email, password, role='Viewer', name=None):
     conn = get_connection()
     hashed = hash_password(password)
     with conn.cursor() as cur:
@@ -46,10 +46,26 @@ def register_user(email, password, role='Viewer'):
         if cur.fetchone():
             return {"error": "User already exists"}, 400
         
-        cur.execute(
-            "INSERT INTO users (email, password_hash, role) VALUES (%s, %s, %s) RETURNING id",
-            (email, hashed, role)
-        )
+        # If name is provided, insert it, otherwise just insert email, password_hash, role
+        if name:
+            cur.execute(
+                "INSERT INTO users (name, email, password_hash, role) VALUES (%s, %s, %s, %s) RETURNING id",
+                (name, email, hashed, role)
+            )
+        else:
+            try:
+                cur.execute(
+                    "INSERT INTO users (email, password_hash, role) VALUES (%s, %s, %s) RETURNING id",
+                    (email, hashed, role)
+                )
+            except Exception:
+                conn.rollback()
+                # Fallback if name is required
+                cur.execute(
+                    "INSERT INTO users (name, email, password_hash, role) VALUES (%s, %s, %s, %s) RETURNING id",
+                    ("Unknown User", email, hashed, role)
+                )
+                
         new_user = cur.fetchone()
         conn.commit()
         return {"id": new_user['id'], "email": email, "role": role}, 201
