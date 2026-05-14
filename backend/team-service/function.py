@@ -34,11 +34,13 @@ def handler(event, context=None):
         # Auth Routes
         if path.endswith('/auth/login') and method == 'POST':
             body = json.loads(event.get('body', '{}'))
-            return json_response(*login_user(body.get('email'), body.get('password')))
+            res_body, status = login_user(body.get('email'), body.get('password'))
+            return json_response(status, res_body)
             
         if path.endswith('/auth/register') and method == 'POST':
             body = json.loads(event.get('body', '{}'))
-            return json_response(*register_user(body.get('email'), body.get('password'), body.get('role', 'Viewer')))
+            res_body, status = register_user(body.get('email'), body.get('password'), body.get('role', 'Viewer'))
+            return json_response(status, res_body)
             
         # Require authentication for all other routes
         user, err = require_auth(headers)
