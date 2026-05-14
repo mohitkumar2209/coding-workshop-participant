@@ -490,10 +490,10 @@ echo -e "  Generating frontend environment configuration..."
 
 # Restart proxy so it picks up the newly generated .env.local
 if [ -f /tmp/proxy-server.pid ]; then
-    kill "$(cat /tmp/proxy-server.pid)" || echo "WARNING: no process found"
+    kill "$(cat /tmp/proxy-server.pid)" 2>/dev/null || echo "WARNING: no process found"
     rm -f /tmp/proxy-server.pid
-elif lsof -iTCP:3001 -sTCP:LISTEN > /dev/null 2>&1; then
-    lsof -ti:3001 | xargs kill 2>/dev/null
+elif lsof -n -P -iTCP:3001 -sTCP:LISTEN > /dev/null 2>&1; then
+    lsof -n -P -ti:3001 | xargs kill 2>/dev/null
 fi
 
 echo -e "  Starting CORS proxy server..."
@@ -515,7 +515,7 @@ fi
 
 # Check if React dev server is already running
 REACT_RUNNING=false
-if lsof -iTCP:3000 -sTCP:LISTEN > /dev/null 2>&1 || ss -ltn 2>/dev/null | grep -q ':3000'; then
+if lsof -n -P -iTCP:3000 -sTCP:LISTEN > /dev/null 2>&1 || ss -ltn 2>/dev/null | grep -q ':3000'; then
     REACT_RUNNING=true
     echo -e "  ✓ React dev server is already running on port 3000"
 fi
@@ -553,7 +553,7 @@ else
     # Cleanup: Kill proxy server when script exits
     if [ -f /tmp/proxy-server.pid ]; then
         PROXY_PID=$(cat /tmp/proxy-server.pid)
-        trap "kill $PROXY_PID 2>/dev/null; rm -f /tmp/proxy-server.pid" EXIT
+        trap "kill $PROXY_PID 2>/dev/null; rm -f /tmp/proxy-server.pid" EXIT INT TERM
     fi
 
     # Start React development server

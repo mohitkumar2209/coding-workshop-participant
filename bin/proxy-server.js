@@ -91,16 +91,13 @@ const server = http.createServer((req, res) => {
   delete headers['sec-fetch-mode'];
   delete headers['sec-fetch-dest'];
 
-  // Keep only essential headers
   const options = {
     hostname: target.hostname,
     port: target.port,
     path: target.path,
     method: req.method,
     headers: {
-      'accept': headers.accept || 'application/json',
-      'content-type': headers['content-type'] || 'application/json',
-      'user-agent': headers['user-agent'] || 'proxy-server',
+      ...headers,
       'host': target.host
     }
   };
