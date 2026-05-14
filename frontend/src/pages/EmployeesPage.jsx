@@ -13,6 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import usersService from '../services/usersService';
 import authService from '../services/authService';
+import teamsService from '../services/teamsService';
 
 const ROLE_COLORS = {
     ADMIN: 'error', MANAGER: 'warning', EMPLOYEE: 'primary',
@@ -28,6 +29,7 @@ const EmployeesPage = () => {
     const isAdmin = currentUser?.role === 'ADMIN';
 
     const [users, setUsers] = useState([]);
+    const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [search, setSearch] = useState('');
@@ -41,7 +43,17 @@ const EmployeesPage = () => {
 
     useEffect(() => {
         fetchUsers();
+        fetchTeams();
     }, []);
+
+    const fetchTeams = async () => {
+        try {
+            const data = await teamsService.getAll();
+            setTeams(data);
+        } catch (err) {
+            console.error('Failed to load teams');
+        }
+    };
 
     const fetchUsers = async () => {
         try {
@@ -263,13 +275,15 @@ const EmployeesPage = () => {
                                 {isAdmin && <MenuItem value="ADMIN">Admin</MenuItem>}
                             </Select>
                         </FormControl>
-                        <TextField
-                            label="Team"
-                            value={formData.team}
-                            onChange={e => setFormData({ ...formData, team: e.target.value })}
-                            fullWidth
-                            placeholder="e.g. Engineering"
-                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Team</InputLabel>
+                            <Select value={formData.team} label="Team" onChange={e => setFormData({ ...formData, team: e.target.value })}>
+                                <MenuItem value="">No Team</MenuItem>
+                                {teams.map(t => (
+                                    <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2 }}>

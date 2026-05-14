@@ -32,15 +32,15 @@ const teamsService = {
         return response.data;
     },
 
-    // Add member to team
+    // Add member to team (by updating the individual's team_id)
     addMember: async (teamId, memberData) => {
-        const response = await apiClient.post(`/team-service/teams/${teamId}/members`, memberData);
+        const response = await apiClient.put(`/team-service/individuals/${memberData.user_id}`, { team_id: teamId });
         return response.data;
     },
 
-    // Remove member from team
-    removeMember: async (teamId, memberId) => {
-        const response = await apiClient.delete(`/team-service/teams/${teamId}/members/${memberId}`);
+    // Remove member from team (by setting the individual's team_id to null)
+    removeMember: async (teamId, userId) => {
+        const response = await apiClient.put(`/team-service/individuals/${userId}`, { team_id: null });
         return response.data;
     },
 };

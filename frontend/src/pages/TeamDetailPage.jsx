@@ -103,10 +103,10 @@ const TeamDetailPage = () => {
         ? ((team.non_direct_count / team.member_count) * 100).toFixed(1)
         : 0;
 
+    const teamMembers = allUsers.filter(u => u.team_id == team.id);
+    
     // Users not already in team
-    const availableUsers = allUsers.filter(
-        u => !team.members?.some(m => m.user_id === u.id)
-    );
+    const availableUsers = allUsers.filter(u => u.team_id != team.id);
 
     return (
         <Box>
@@ -219,7 +219,7 @@ const TeamDetailPage = () => {
                         <CardContent>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                 <Typography variant="h6" fontWeight={600}>
-                                    Team Members ({team.member_count})
+                                    Team Members ({teamMembers.length})
                                 </Typography>
                                 {canEdit && (
                                     <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={() => setMemberDialogOpen(true)}>
@@ -228,26 +228,25 @@ const TeamDetailPage = () => {
                                 )}
                             </Box>
                             <Divider sx={{ mb: 2 }} />
-                            {!team.members || team.members.length === 0 ? (
+                            {teamMembers.length === 0 ? (
                                 <Box sx={{ textAlign: 'center', py: 4 }}>
                                     <PersonIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
                                     <Typography color="text.secondary">No members yet.</Typography>
                                 </Box>
                             ) : (
                                 <List disablePadding>
-                                    {team.members.map((member, idx) => {
-                                        const user = allUsers.find(u => u.id === member.user_id);
-                                        const isLeader = member.user_id === team.team_leader_id;
-                                        const isNotColocated = member.location && member.location !== team.location;
+                                    {teamMembers.map((user, idx) => {
+                                        const isLeader = user.id === team.leader_id;
+                                        const isNotColocated = user.location && user.location !== team.location;
                                         return (
-                                            <React.Fragment key={member.id}>
+                                            <React.Fragment key={user.id}>
                                                 <ListItem
                                                     disablePadding
                                                     sx={{ py: 1.5 }}
                                                     secondaryAction={
                                                         canEdit && (
                                                             <Tooltip title="Remove member">
-                                                                <IconButton edge="end" size="small" color="error" onClick={() => handleRemoveMember(member.id)}>
+                                                                <IconButton edge="end" size="small" color="error" onClick={() => handleRemoveMember(user.id)}>
                                                                     <DeleteIcon fontSize="small" />
                                                                 </IconButton>
                                                             </Tooltip>
@@ -256,33 +255,36 @@ const TeamDetailPage = () => {
                                                 >
                                                     <ListItemAvatar>
                                                         <Avatar sx={{ bgcolor: isLeader ? 'primary.main' : 'grey.300' }}>
-                                                            {user?.name?.charAt(0) || '?'}
+                                                            {user.name.charAt(0)}
                                                         </Avatar>
                                                     </ListItemAvatar>
                                                     <ListItemText
                                                         primary={
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                                                                 <Typography variant="body2" fontWeight={600}>
-                                                                    {user?.name || `User #${member.user_id}`}
+                                                                    {user.name}
                                                                 </Typography>
                                                                 {isLeader && <Chip label="Team Leader" size="small" color="primary" />}
-                                                                {!member.is_direct_staff && <Chip label="Non-Direct" size="small" color="warning" variant="outlined" />}
+                                                                {!user.is_direct_staff && <Chip label="Non-Direct" size="small" color="warning" variant="outlined" />}
                                                                 {isNotColocated && <Chip label="Remote" size="small" color="info" variant="outlined" />}
                                                             </Box>
                                                         }
                                                         secondary={
                                                             <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
-                                                                <Typography variant="caption" color="text.secondary">{member.role}</Typography>
-                                                                {member.location && (
+                                                                <Typography variant="caption" color="text.secondary">{user.role}</Typography>
+                                                                {user.location && (
                                                                     <Typography variant="caption" color="text.secondary">
-                                                                        📍 {member.location}
+                                                                        📍 {user.location}
                                                                     </Typography>
                                                                 )}
+                                                                <Typography variant="caption" color="text.secondary">
+                                                                    ✉️ {user.email}
+                                                                </Typography>
                                                             </Box>
                                                         }
                                                     />
                                                 </ListItem>
-                                                {idx < team.members.length - 1 && <Divider />}
+                                                {idx < teamMembers.length - 1 && <Divider />}
                                             </React.Fragment>
                                         );
                                     })}
