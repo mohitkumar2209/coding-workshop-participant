@@ -5,9 +5,9 @@ import hashlib
 config = {
     "host": os.environ.get("POSTGRES_HOST", "localhost"),
     "port": os.environ.get("POSTGRES_PORT", "5432"),
-    "user": os.environ.get("POSTGRES_USER", "postgres"),
-    "password": os.environ.get("POSTGRES_PASS", "postgres"),
-    "dbname": os.environ.get("POSTGRES_NAME", "postgres"),
+    "user": os.environ.get("POSTGRES_USER", "test"),
+    "password": os.environ.get("POSTGRES_PASS", "test"),
+    "dbname": os.environ.get("POSTGRES_NAME", "test"),
 }
 
 def generate_password_hash(password):
