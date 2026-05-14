@@ -7,7 +7,8 @@ import os
 import sys
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from werkzeug.security import generate_password_hash
+import hashlib
+import os
 from datetime import date, timedelta
 import random
 
@@ -22,6 +23,11 @@ config = {
 
 def get_conn():
     return psycopg2.connect(**config, cursor_factory=RealDictCursor)
+
+def generate_password_hash(password):
+    salt = os.urandom(16)
+    pw_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
+    return salt.hex() + ':' + pw_hash.hex()
 
 def seed():
     conn = get_conn()
@@ -52,8 +58,8 @@ def seed():
             print(f"  ↩ User already exists: {email}")
         else:
             cur.execute(
-                'INSERT INTO users (name, email, password_hash, role, team) VALUES (%s,%s,%s,%s,%s) RETURNING id',
-                (name, email, generate_password_hash('password123'), role, team)
+                'INSERT INTO users (name, email, password_hash, role) VALUES (%s,%s,%s,%s) RETURNING id',
+                (name, email, generate_password_hash('password123'), role)
             )
             uid = cur.fetchone()['id']
             user_ids.append(uid)
