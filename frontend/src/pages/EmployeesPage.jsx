@@ -78,12 +78,24 @@ const EmployeesPage = () => {
         if (!validateForm()) return;
         setSaving(true);
         try {
+            // 1. Create the user authentication account
             await authService.register(formData);
+            
+            // 2. Create the HR individual record for the dashboard
+            await usersService.createIndividual({
+                name: formData.name,
+                email: formData.email,
+                role: formData.role,
+                team_id: formData.team || null,
+                location: formData.location || 'Remote',
+                is_direct_staff: true
+            });
+            
             setDialogOpen(false);
             setFormData(EMPTY_FORM);
             fetchUsers();
         } catch (err) {
-            setFormErrors({ submit: err.response?.data?.message || 'Failed to create employee.' });
+            setFormErrors({ submit: err.response?.data?.error || err.response?.data?.message || 'Failed to create employee.' });
         } finally {
             setSaving(false);
         }

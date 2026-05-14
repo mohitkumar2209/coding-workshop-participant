@@ -7,6 +7,12 @@ const usersService = {
         return response.data;
     },
 
+    // Create a new individual (HR record)
+    createIndividual: async (individualData) => {
+        const response = await apiClient.post('/team-service/individuals', individualData);
+        return response.data;
+    },
+
     // Get performance reviews
     getPerformanceReviews: async (userId = null) => {
         const url = userId
