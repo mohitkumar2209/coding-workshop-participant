@@ -219,6 +219,85 @@ def handle_resource(current_user, resource):
     conn.close()
     return jsonify(results)
 
+@app.route('/api/api-service/<resource>/<int:record_id>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/<resource>/<int:record_id>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/api/<resource>/<int:record_id>', methods=['GET', 'PUT', 'DELETE'])
+@token_required
+def handle_resource_by_id(current_user, resource, record_id):
+    """Handle GET, PUT, DELETE for a specific resource record"""
+    valid_resources = ['performance_reviews', 'development_plans', 'competencies', 'training_records']
+    if resource not in valid_resources:
+        return jsonify({'message': 'Invalid resource'}), 404
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Fetch the record first
+    cur.execute(f'SELECT * FROM {resource} WHERE id = %s', (record_id,))
+    record = cur.fetchone()
+    if not record:
+        cur.close()
+        conn.close()
+        return jsonify({'message': 'Record not found'}), 404
+
+    # Employees can only access their own records
+    if current_user['role'] == 'EMPLOYEE' and record.get('user_id') != current_user['id']:
+        cur.close()
+        conn.close()
+        return jsonify({'message': 'Unauthorized'}), 403
+
+    if request.method == 'GET':
+        cur.close()
+        conn.close()
+        return jsonify(record), 200
+
+    if request.method == 'PUT':
+        if current_user['role'] == 'EMPLOYEE':
+            cur.close()
+            conn.close()
+            return jsonify({'message': 'Employees cannot update records'}), 403
+        data = request.get_json(force=True, silent=True) or {}
+        # Build update query from provided fields (exclude id, user_id)
+        allowed = {k: v for k, v in data.items() if k not in ('id', 'user_id')}
+        if not allowed:
+            cur.close()
+            conn.close()
+            return jsonify({'message': 'No fields to update'}), 400
+        set_clause = ', '.join([f"{k} = %s" for k in allowed.keys()])
+        values = list(allowed.values()) + [record_id]
+        try:
+            cur.execute(f'UPDATE {resource} SET {set_clause} WHERE id = %s', values)
+            conn.commit()
+            return jsonify({'message': 'Updated successfully'}), 200
+        except Exception as e:
+            conn.rollback()
+            return jsonify({'message': str(e)}), 400
+        finally:
+            cur.close()
+            conn.close()
+
+    if request.method == 'DELETE':
+        if current_user['role'] not in ['ADMIN', 'MANAGER']:
+            cur.close()
+            conn.close()
+            return jsonify({'message': 'Unauthorized'}), 403
+        try:
+            cur.execute(f'DELETE FROM {resource} WHERE id = %s', (record_id,))
+            conn.commit()
+            cur.close()
+            conn.close()
+            return jsonify({'message': 'Deleted successfully'}), 204
+        except Exception as e:
+            conn.rollback()
+            cur.close()
+            conn.close()
+            return jsonify({'message': str(e)}), 500
+
+@app.route('/api/api-service/health', methods=['GET'])
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'healthy', 'service': 'api-service'}), 200
+
 def handler(event, context):
     try:
         init_db()
