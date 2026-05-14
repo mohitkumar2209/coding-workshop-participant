@@ -126,4 +126,34 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        
+        # Fix foreign keys in case tables already existed pointing to users(id) instead of individuals(id)
+        cur.execute("""
+            DO $$
+            BEGIN
+                -- Fix performance_reviews
+                IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'performance_reviews_user_id_fkey') THEN
+                    ALTER TABLE performance_reviews DROP CONSTRAINT performance_reviews_user_id_fkey;
+                    ALTER TABLE performance_reviews ADD CONSTRAINT performance_reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES individuals(id) ON DELETE CASCADE;
+                END IF;
+                
+                -- Fix competencies
+                IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'competencies_user_id_fkey') THEN
+                    ALTER TABLE competencies DROP CONSTRAINT competencies_user_id_fkey;
+                    ALTER TABLE competencies ADD CONSTRAINT competencies_user_id_fkey FOREIGN KEY (user_id) REFERENCES individuals(id) ON DELETE CASCADE;
+                END IF;
+                
+                -- Fix development_plans
+                IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'development_plans_user_id_fkey') THEN
+                    ALTER TABLE development_plans DROP CONSTRAINT development_plans_user_id_fkey;
+                    ALTER TABLE development_plans ADD CONSTRAINT development_plans_user_id_fkey FOREIGN KEY (user_id) REFERENCES individuals(id) ON DELETE CASCADE;
+                END IF;
+                
+                -- Fix training_records
+                IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'training_records_user_id_fkey') THEN
+                    ALTER TABLE training_records DROP CONSTRAINT training_records_user_id_fkey;
+                    ALTER TABLE training_records ADD CONSTRAINT training_records_user_id_fkey FOREIGN KEY (user_id) REFERENCES individuals(id) ON DELETE CASCADE;
+                END IF;
+            END $$;
+        """)
         conn.commit()
