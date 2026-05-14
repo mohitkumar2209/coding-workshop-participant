@@ -53,7 +53,8 @@ const TeamsPage = () => {
             if (filterLocation) filters.location = filterLocation;
             if (filterDept) filters.department = filterDept;
             const data = await teamsService.getAll(filters);
-            setTeams(data);
+            console.log("TEAMS RAW DATA:", data);
+            setTeams(Array.isArray(data) ? data : []);
         } catch (err) {
             setError('Failed to load teams.');
         } finally {

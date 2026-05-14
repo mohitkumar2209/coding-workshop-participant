@@ -37,10 +37,11 @@ const MyProfilePage = () => {
                 usersService.getCompetencies(),
                 usersService.getTrainingRecords(),
             ]);
-            setReviews(reviewsData);
-            setPlans(plansData);
-            setCompetencies(compsData);
-            setTraining(trainingData);
+            console.log("PROFILE RAW DATA:", { reviewsData, plansData, compsData, trainingData });
+            setReviews(Array.isArray(reviewsData) ? reviewsData : []);
+            setPlans(Array.isArray(plansData) ? plansData : []);
+            setCompetencies(Array.isArray(compsData) ? compsData : []);
+            setTraining(Array.isArray(trainingData) ? trainingData : []);
         } catch (err) {
             setError('Failed to load your profile data.');
         } finally {
