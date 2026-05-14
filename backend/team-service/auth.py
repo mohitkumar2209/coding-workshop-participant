@@ -1,17 +1,24 @@
 import os
 import jwt
 import datetime
-import bcrypt
+import hashlib
 from db import get_connection
 
 JWT_SECRET = os.getenv('JWT_SECRET', 'super_secret_dev_key')
 
 def hash_password(password):
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    salt = os.urandom(16)
+    pw_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
+    return salt.hex() + ':' + pw_hash.hex()
 
 def verify_password(password, hashed):
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    try:
+        salt_hex, hash_hex = hashed.split(':')
+        salt = bytes.fromhex(salt_hex)
+        pw_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
+        return pw_hash.hex() == hash_hex
+    except Exception:
+        return False
 
 def generate_token(user_id, role):
     payload = {
