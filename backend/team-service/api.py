@@ -346,9 +346,9 @@ def handle_development_plans(event, user):
     if method == 'GET':
         with conn.cursor() as cur:
             if user_id:
-                cur.execute("SELECT * FROM development_plans WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+                cur.execute("SELECT * FROM development_plans WHERE user_id = %s ORDER BY id DESC", (user_id,))
             else:
-                cur.execute("SELECT * FROM development_plans ORDER BY created_at DESC")
+                cur.execute("SELECT * FROM development_plans ORDER BY id DESC")
             return json_response(200, cur.fetchall())
             
     elif method == 'POST':
@@ -379,9 +379,9 @@ def handle_training_records(event, user):
     if method == 'GET':
         with conn.cursor() as cur:
             if user_id:
-                cur.execute("SELECT * FROM training_records WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+                cur.execute("SELECT * FROM training_records WHERE user_id = %s ORDER BY id DESC", (user_id,))
             else:
-                cur.execute("SELECT * FROM training_records ORDER BY created_at DESC")
+                cur.execute("SELECT * FROM training_records ORDER BY id DESC")
             return json_response(200, cur.fetchall())
             
     elif method == 'POST':
