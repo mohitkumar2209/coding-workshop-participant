@@ -1,9 +1,10 @@
 import axios from 'axios';
 
 let baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-// The proxy server expects paths to start with /api
-if (baseURL === 'http://localhost:3001') {
-    baseURL = 'http://localhost:3001/api';
+
+// CloudFront and the local proxy server expect API requests to start with /api
+if (baseURL && !baseURL.endsWith('/api')) {
+    baseURL = baseURL.replace(/\/$/, '') + '/api';
 }
 
 // Create axios instance with base configuration
