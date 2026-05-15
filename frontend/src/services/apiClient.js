@@ -57,7 +57,7 @@ apiClient.interceptors.response.use(
                 const error = new Error(body?.error || 'API Error');
                 error.response = { status: statusCode, data: body };
                 
-                if (statusCode === 401) {
+                if (statusCode === 401 && window.location.pathname !== '/login') {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     window.location.href = '/login';
@@ -74,7 +74,7 @@ apiClient.interceptors.response.use(
     },
 
     (error) => {
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && window.location.pathname !== '/login') {
             // Token expired or invalid
             localStorage.removeItem('token');
             localStorage.removeItem('user');
