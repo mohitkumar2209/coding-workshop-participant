@@ -165,4 +165,17 @@ def init_db():
             ALTER TABLE achievements ADD COLUMN IF NOT EXISTS achievement_date DATE;
         """)
         
+        # Ensure default admin user exists
+        try:
+            from auth import hash_password
+            cur.execute("SELECT id FROM users WHERE email = 'admin@acme.com'")
+            if not cur.fetchone():
+                hashed = hash_password('admin123')
+                cur.execute(
+                    "INSERT INTO users (name, email, password_hash, role) VALUES (%s, %s, %s, %s)",
+                    ("Admin", "admin@acme.com", hashed, "ADMIN")
+                )
+        except Exception as e:
+            print("Failed to seed admin user:", e)
+        
         conn.commit()
