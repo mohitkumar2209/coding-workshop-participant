@@ -8,11 +8,21 @@ def json_response(status_code, body):
         "body": json.dumps(body, default=str)
     }
 
+def get_id_from_path(event):
+    path_params = event.get('pathParameters') or {}
+    id_val = path_params.get('id')
+    if id_val:
+        return id_val
+    path = event.get('path', event.get('rawPath', ''))
+    parts = [p for p in path.split('/') if p]
+    if parts and parts[-1].isdigit():
+        return parts[-1]
+    return None
+
 def handle_metadata(event, user):
     conn = get_connection()
     method = event.get('httpMethod', 'GET')
-    path_params = event.get('pathParameters') or {}
-    meta_id = path_params.get('id')
+    meta_id = get_id_from_path(event)
     
     if method == 'GET':
         with conn.cursor() as cur:
@@ -68,8 +78,7 @@ def handle_metadata(event, user):
 def handle_teams(event, user):
     conn = get_connection()
     method = event.get('httpMethod', 'GET')
-    path_params = event.get('pathParameters') or {}
-    team_id = path_params.get('id')
+    team_id = get_id_from_path(event)
     
     if method == 'GET':
         with conn.cursor() as cur:
@@ -138,8 +147,7 @@ def handle_teams(event, user):
 def handle_individuals(event, user):
     conn = get_connection()
     method = event.get('httpMethod', 'GET')
-    path_params = event.get('pathParameters') or {}
-    ind_id = path_params.get('id')
+    ind_id = get_id_from_path(event)
     
     if method == 'GET':
         with conn.cursor() as cur:
@@ -220,8 +228,7 @@ def handle_individuals(event, user):
 def handle_achievements(event, user):
     conn = get_connection()
     method = event.get('httpMethod', 'GET')
-    path_params = event.get('pathParameters') or {}
-    ach_id = path_params.get('id')
+    ach_id = get_id_from_path(event)
     
     if method == 'GET':
         with conn.cursor() as cur:
@@ -243,14 +250,19 @@ def handle_achievements(event, user):
         if user['role'] in ['Viewer']:
             return json_response(403, {"error": "Forbidden"})
         body = json.loads(event.get('body', '{}'))
-        required = ['team_id', 'month', 'year', 'description']
+        required = ['team_id', 'title', 'achievement_date']
         if not all(k in body for k in required):
             return json_response(400, {"error": "Missing required fields"})
             
+        # Extract month and year from achievement_date (YYYY-MM-DD)
+        ach_date = body.get('achievement_date', '')
+        year = int(ach_date.split('-')[0]) if '-' in ach_date else 2026
+        month = int(ach_date.split('-')[1]) if '-' in ach_date else 1
+            
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO achievements (team_id, month, year, description) VALUES (%s, %s, %s, %s) RETURNING *",
-                (body['team_id'], body['month'], body['year'], body['description'])
+                "INSERT INTO achievements (team_id, month, year, description, title, achievement_type, impact_level, achievement_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *",
+                (body['team_id'], str(month), year, body.get('description', ''), body['title'], body.get('achievement_type'), body.get('impact_level'), body.get('achievement_date'))
             )
             ach = cur.fetchone()
             conn.commit()

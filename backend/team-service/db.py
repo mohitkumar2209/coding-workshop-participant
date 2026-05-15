@@ -156,4 +156,13 @@ def init_db():
                 END IF;
             END $$;
         """)
+        
+        # Add missing columns to achievements to match frontend
+        cur.execute("""
+            ALTER TABLE achievements ADD COLUMN IF NOT EXISTS title VARCHAR(255);
+            ALTER TABLE achievements ADD COLUMN IF NOT EXISTS achievement_type VARCHAR(100);
+            ALTER TABLE achievements ADD COLUMN IF NOT EXISTS impact_level VARCHAR(50);
+            ALTER TABLE achievements ADD COLUMN IF NOT EXISTS achievement_date DATE;
+        """)
+        
         conn.commit()
